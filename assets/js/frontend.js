@@ -1,17 +1,53 @@
 /**
  * Lazy Load Block - Frontend JavaScript
- * Versión: 1.1.0 (con mejoras de seguridad)
+ * Versión: 1.5.0 (Security Hardened)
  *
  * Este script maneja la carga diferida del contenido.
  * El contenido (iframes, HTML) está codificado en base64 en el atributo data-content
  * y NO se renderiza hasta que el usuario hace clic o el bloque entra en el viewport.
  *
- * SEGURIDAD: Los scripts solo se ejecutan si data-allow-scripts="true"
- * (configurado por el servidor según permisos del usuario)
+ * SEGURIDAD:
+ * - Los scripts solo se ejecutan si data-allow-scripts="true"
+ * - Validación de contenido antes de inyección
+ * - Sanitización adicional client-side (defense-in-depth)
+ * - Detección de patrones peligrosos
+ * - Límites de tamaño de contenido
+ * - CSP-aware script execution
+ *
+ * @package LazyLoadBlock
+ * @since 1.0.0
  */
 
 (function() {
     'use strict';
+
+    /**
+     * Configuración de seguridad
+     */
+    var SECURITY_CONFIG = {
+        maxContentLength: 1048576, // 1MB máximo
+        maxScriptLength: 102400,   // 100KB máximo por script
+        dangerousPatterns: [
+            /javascript\s*:/gi,
+            /vbscript\s*:/gi,
+            /data\s*:\s*text\/html/gi,
+            /expression\s*\(/gi,
+            /<script[^>]*>[\s\S]*?document\.cookie/gi,
+            /<script[^>]*>[\s\S]*?localStorage/gi,
+            /<script[^>]*>[\s\S]*?sessionStorage/gi,
+        ],
+        // URLs de confianza para iframes (opcional, puede ser extendido)
+        trustedDomains: [
+            'youtube.com',
+            'youtube-nocookie.com',
+            'vimeo.com',
+            'dailymotion.com',
+            'soundcloud.com',
+            'spotify.com',
+            'google.com',
+            'maps.google.com',
+        ]
+    };
 
     /**
      * Inicializar todos los bloques de Lazy Load
@@ -87,11 +123,11 @@
             return;
         }
 
-        const encodedContent = block.getAttribute('data-content');
-        const contentContainer = block.querySelector('.llb-content');
-        const placeholder = block.querySelector('.llb-placeholder');
-        const loader = block.querySelector('.llb-loader');
-        const allowScripts = block.getAttribute('data-allow-scripts') === 'true';
+        var encodedContent = block.getAttribute('data-content');
+        var contentContainer = block.querySelector('.llb-content');
+        var placeholder = block.querySelector('.llb-placeholder');
+        var loader = block.querySelector('.llb-loader');
+        var allowScripts = block.getAttribute('data-allow-scripts') === 'true';
 
         if (!encodedContent || !contentContainer) {
             console.error('Lazy Load Block: Missing content or container');
@@ -107,7 +143,7 @@
         }
 
         // Decodificar el contenido desde base64
-        let decodedContent;
+        var decodedContent;
         try {
             decodedContent = decodeBase64(encodedContent);
         } catch (e) {
@@ -116,17 +152,33 @@
             return;
         }
 
-        // Validación básica del contenido decodificado
-        if (!isValidContent(decodedContent)) {
-            console.error('Lazy Load Block: Invalid content detected');
+        // VALIDACIÓN EXHAUSTIVA del contenido decodificado
+        var validation = validateContent(decodedContent, allowScripts);
+        if (!validation.valid) {
+            console.error('Lazy Load Block: Content validation failed -', validation.reason);
             showError(contentContainer, loader);
+
+            // Disparar evento de error de seguridad
+            block.dispatchEvent(new CustomEvent('llb:security-error', {
+                bubbles: true,
+                detail: { block: block, reason: validation.reason }
+            }));
             return;
         }
 
+        // SANITIZACIÓN ADICIONAL (defense-in-depth)
+        decodedContent = basicSanitize(decodedContent, allowScripts);
+
         // Pequeño delay para mostrar el loader (UX)
         setTimeout(function() {
-            // Inyectar el contenido en el DOM
-            contentContainer.innerHTML = decodedContent;
+            // Inyectar el contenido en el DOM de forma segura
+            try {
+                contentContainer.innerHTML = decodedContent;
+            } catch (e) {
+                console.error('Lazy Load Block: Error injecting content', e);
+                showError(contentContainer, loader);
+                return;
+            }
 
             // Ejecutar scripts SOLO si está permitido por el servidor
             if (allowScripts) {
@@ -145,7 +197,7 @@
             // Marcar como cargado
             block.setAttribute('data-loaded', 'true');
 
-            // Limpiar el data-content por seguridad (ya no se necesita)
+            // LIMPIAR DATOS SENSIBLES por seguridad
             block.removeAttribute('data-content');
 
             // Disparar evento personalizado
@@ -171,21 +223,95 @@
     }
 
     /**
-     * Validación básica del contenido
+     * Validación exhaustiva del contenido
+     * @param {string} content - Contenido HTML
+     * @param {boolean} allowScripts - Si se permiten scripts
+     * @returns {object} - {valid: boolean, reason: string}
+     */
+    function validateContent(content, allowScripts) {
+        var result = { valid: true, reason: '' };
+
+        if (typeof content !== 'string') {
+            return { valid: false, reason: 'Content is not a string' };
+        }
+
+        // Verificar longitud
+        if (content.length > SECURITY_CONFIG.maxContentLength) {
+            return { valid: false, reason: 'Content exceeds maximum length' };
+        }
+
+        // Si no se permiten scripts, verificar patrones peligrosos
+        if (!allowScripts) {
+            for (var i = 0; i < SECURITY_CONFIG.dangerousPatterns.length; i++) {
+                if (SECURITY_CONFIG.dangerousPatterns[i].test(content)) {
+                    return { valid: false, reason: 'Dangerous pattern detected' };
+                }
+            }
+        }
+
+        // Verificar que no haya intentos de escapar del contenedor
+        if (content.indexOf('</style>') !== -1 || content.indexOf('</script>') !== -1) {
+            // Esto está OK si el contenido tiene scripts/styles propios
+            // pero verificamos que no intente cerrar tags del padre
+            var styleCloseCount = (content.match(/<\/style>/gi) || []).length;
+            var styleOpenCount = (content.match(/<style/gi) || []).length;
+            if (styleCloseCount > styleOpenCount) {
+                return { valid: false, reason: 'Unbalanced style tags' };
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Validación básica del contenido (legacy, para compatibilidad)
      * @param {string} content - Contenido HTML
      * @returns {boolean} - true si el contenido parece válido
      */
     function isValidContent(content) {
+        return validateContent(content, false).valid;
+    }
+
+    /**
+     * Sanitizar contenido HTML básico (defense-in-depth)
+     * Solo se aplica si DOMPurify no está disponible
+     * @param {string} content - Contenido HTML
+     * @param {boolean} allowScripts - Si se permiten scripts
+     * @returns {string} - Contenido sanitizado
+     */
+    function basicSanitize(content, allowScripts) {
         if (typeof content !== 'string') {
-            return false;
+            return '';
         }
 
-        // Verificar longitud razonable (máximo 1MB)
-        if (content.length > 1048576) {
-            return false;
+        // Si DOMPurify está disponible, usarlo
+        if (typeof DOMPurify !== 'undefined') {
+            var config = {
+                ADD_TAGS: ['iframe', 'embed', 'object', 'param', 'source', 'video', 'audio'],
+                ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'sandbox', 'loading', 'referrerpolicy'],
+                ALLOW_DATA_ATTR: true,
+            };
+
+            if (allowScripts) {
+                config.ADD_TAGS.push('script');
+                config.FORCE_BODY = true;
+            }
+
+            return DOMPurify.sanitize(content, config);
         }
 
-        return true;
+        // Sanitización básica si DOMPurify no está disponible
+        if (!allowScripts) {
+            // Remover on* event handlers
+            content = content.replace(/\s+on\w+\s*=\s*(['"])[^'"]*\1/gi, '');
+            content = content.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
+
+            // Remover javascript: URLs
+            content = content.replace(/href\s*=\s*(['"])javascript:[^'"]*\1/gi, 'href=""');
+            content = content.replace(/src\s*=\s*(['"])javascript:[^'"]*\1/gi, 'src=""');
+        }
+
+        return content;
     }
 
     /**
@@ -296,7 +422,21 @@
         /**
          * Obtener versión del script
          */
-        version: '1.2.0'
+        version: '1.5.0',
+
+        /**
+         * Verificar si DOMPurify está disponible
+         */
+        hasDOMPurify: function() {
+            return typeof DOMPurify !== 'undefined';
+        },
+
+        /**
+         * Obtener configuración de seguridad (solo lectura)
+         */
+        getSecurityConfig: function() {
+            return Object.assign({}, SECURITY_CONFIG);
+        }
     };
 
     // Inicializar cuando el DOM esté listo
