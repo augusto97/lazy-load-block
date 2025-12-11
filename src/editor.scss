@@ -1,0 +1,130 @@
+/**
+ * Estilos del editor de Gutenberg para Lazy Load Block
+ */
+
+.lazy-load-block-editor {
+    .llb-editor-container {
+        border: 2px solid #007cba;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .llb-editor-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+        color: #fff;
+
+        .llb-editor-icon {
+            font-size: 20px;
+        }
+
+        .llb-editor-title {
+            font-weight: 600;
+            font-size: 14px;
+            flex-grow: 1;
+        }
+
+        .llb-editor-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    }
+
+    .components-notice {
+        margin: 16px;
+        margin-bottom: 0;
+    }
+
+    .llb-html-textarea {
+        margin: 16px;
+
+        textarea {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            background: #f6f7f7;
+            border-color: #ddd;
+
+            &:focus {
+                background: #fff;
+                border-color: #007cba;
+                box-shadow: 0 0 0 1px #007cba;
+            }
+        }
+    }
+
+    .llb-preview-section {
+        padding: 0 16px 16px;
+
+        .components-button {
+            margin-bottom: 12px;
+        }
+    }
+
+    .llb-preview-container {
+        border: 1px dashed #ddd;
+        border-radius: 4px;
+        padding: 12px;
+        background: #f9f9f9;
+    }
+
+    .llb-preview-notice {
+        font-size: 12px;
+        color: #666;
+        margin: 0 0 12px 0;
+        font-style: italic;
+    }
+
+    .llb-preview-content {
+        background: #fff;
+        padding: 12px;
+        border-radius: 4px;
+        border: 1px solid #eee;
+
+        iframe {
+            max-width: 100%;
+        }
+    }
+
+    .components-placeholder {
+        margin: 16px;
+        background: #f0f6fc;
+        border-color: #007cba;
+    }
+
+    .llb-editor-footer {
+        padding: 12px 16px;
+        background: #f6f7f7;
+        border-top: 1px solid #eee;
+
+        p {
+            margin: 0;
+            font-size: 12px;
+            color: #666;
+
+            strong {
+                color: #333;
+            }
+        }
+    }
+}
+
+// Estilos para el panel de configuración
+.llb-media-upload {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    img {
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+}

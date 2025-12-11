@@ -1,0 +1,57 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "lazy-load-block/lazy-load-block",
+    "version": "1.0.0",
+    "title": "Lazy Load Block",
+    "category": "lazy-load",
+    "icon": "performance",
+    "description": "Bloque que carga contenido (iframes, HTML) solo cuando el usuario hace clic. Ideal para mejorar PageSpeed y Core Web Vitals.",
+    "keywords": ["lazy", "iframe", "performance", "pagespeed", "defer", "modal", "popup"],
+    "supports": {
+        "html": false,
+        "align": ["wide", "full"]
+    },
+    "textdomain": "lazy-load-block",
+    "attributes": {
+        "htmlContent": {
+            "type": "string",
+            "default": ""
+        },
+        "triggerText": {
+            "type": "string",
+            "default": "Cargar contenido"
+        },
+        "triggerType": {
+            "type": "string",
+            "default": "button",
+            "enum": ["button", "link"]
+        },
+        "placeholderText": {
+            "type": "string",
+            "default": "Haz clic para cargar el contenido"
+        },
+        "showPlaceholder": {
+            "type": "boolean",
+            "default": true
+        },
+        "placeholderImage": {
+            "type": "string",
+            "default": ""
+        },
+        "autoLoadOnVisible": {
+            "type": "boolean",
+            "default": false
+        },
+        "containerWidth": {
+            "type": "string",
+            "default": "100%"
+        },
+        "containerHeight": {
+            "type": "string",
+            "default": "400px"
+        }
+    },
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./index.css"
+}
