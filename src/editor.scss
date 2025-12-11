@@ -1,62 +1,33 @@
 /**
- * Estilos del editor - Versión minimalista
+ * Estilos del editor - Versión limpia
  */
 
 .lazy-load-block-editor {
-    .llb-editor-minimal {
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        overflow: hidden;
-        background: #fff;
-    }
-
-    // Toggle código/preview
-    .llb-editor-toggle {
-        padding: 8px;
-        background: #f6f7f7;
-        border-bottom: 1px solid #ddd;
-        display: flex;
-        justify-content: flex-end;
-
-        .components-button-group {
-            .components-button {
-                font-size: 12px;
-                padding: 4px 12px;
-                min-height: 28px;
-            }
-        }
-    }
-
     // Editor de código
-    .llb-code-editor {
-        margin: 0;
-
-        .components-base-control__field {
-            margin: 0;
-        }
-
+    .llb-editor-code {
         textarea {
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace !important;
-            font-size: 13px !important;
-            line-height: 1.5 !important;
-            border: none !important;
-            border-radius: 0 !important;
+            width: 100%;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             resize: vertical;
             min-height: 120px;
+            background: #f9f9f9;
 
             &:focus {
-                box-shadow: none !important;
-                outline: none !important;
+                border-color: #007cba;
+                outline: none;
+                background: #fff;
             }
         }
     }
 
     // Vista previa
-    .llb-preview-area {
-        min-height: 120px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .llb-editor-preview {
+        min-height: 60px;
     }
 
     // Preview modo imagen
@@ -78,7 +49,6 @@
             transform: translate(-50%, -50%);
             width: 68px;
             height: 68px;
-            background: rgba(0, 0, 0, 0.7);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -87,7 +57,6 @@
             svg {
                 width: 30px;
                 height: 30px;
-                fill: #fff;
                 margin-left: 4px;
             }
         }
@@ -97,8 +66,9 @@
     .llb-preview-button-mode {
         padding: 30px;
         text-align: center;
-        width: 100%;
         background: #f9f9f9;
+        border: 1px dashed #ddd;
+        border-radius: 4px;
 
         img {
             max-width: 100%;
@@ -111,6 +81,7 @@
             margin: 0 0 15px 0;
             color: #666;
             font-size: 14px;
+            line-height: 1.4;
         }
 
         button {
