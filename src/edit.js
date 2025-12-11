@@ -1,6 +1,6 @@
 /**
  * Componente de edición del bloque Lazy Load
- * Versión minimalista - Toggle en toolbar
+ * Versión con soporte responsive para iframes
  */
 
 import { __ } from '@wordpress/i18n';
@@ -23,10 +23,11 @@ import {
     ToolbarGroup,
     ToolbarButton,
     ColorPicker,
+    TabPanel,
     __experimentalText as Text,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
-import { code, seen } from '@wordpress/icons';
+import { code, seen, desktop, tablet, mobile } from '@wordpress/icons';
 
 export default function Edit({ attributes, setAttributes }) {
     const {
@@ -41,16 +42,26 @@ export default function Edit({ attributes, setAttributes }) {
         autoLoadOnVisible,
         containerWidth,
         containerHeight,
+        iframeWidth,
+        iframeHeight,
+        iframeWidthTablet,
+        iframeHeightTablet,
+        iframeWidthMobile,
+        iframeHeightMobile,
+        aspectRatio,
         allowScripts,
     } = attributes;
 
-    const [viewMode, setViewMode] = useState('preview'); // 'code' o 'preview'
+    const [viewMode, setViewMode] = useState('preview');
 
     const blockProps = useBlockProps({
         className: 'lazy-load-block-editor',
     });
 
     const isImageMode = triggerType === 'image';
+
+    // Detectar si hay un iframe en el contenido
+    const hasIframe = htmlContent && htmlContent.toLowerCase().includes('<iframe');
 
     return (
         <>
@@ -72,7 +83,7 @@ export default function Edit({ attributes, setAttributes }) {
                 </ToolbarGroup>
             </BlockControls>
 
-            {/* Panel lateral con todas las configuraciones */}
+            {/* Panel lateral */}
             <InspectorControls>
                 {/* Código HTML */}
                 <PanelBody title={__('Código HTML', 'lazy-load-block')} initialOpen={true}>
@@ -148,6 +159,117 @@ export default function Edit({ attributes, setAttributes }) {
                     </PanelBody>
                 )}
 
+                {/* Dimensiones del iframe/contenido - Responsive */}
+                <PanelBody title={__('Tamaño del contenido', 'lazy-load-block')} initialOpen={hasIframe}>
+                    <SelectControl
+                        label={__('Proporción (aspect ratio)', 'lazy-load-block')}
+                        value={aspectRatio}
+                        options={[
+                            { label: __('Personalizado', 'lazy-load-block'), value: '' },
+                            { label: '16:9 (Video HD)', value: '16/9' },
+                            { label: '4:3 (Video clásico)', value: '4/3' },
+                            { label: '1:1 (Cuadrado)', value: '1/1' },
+                            { label: '9:16 (Vertical)', value: '9/16' },
+                            { label: '21:9 (Ultrawide)', value: '21/9' },
+                        ]}
+                        onChange={(value) => setAttributes({ aspectRatio: value })}
+                        help={__('Si seleccionas una proporción, el alto se ajusta automáticamente.', 'lazy-load-block')}
+                    />
+
+                    <TabPanel
+                        className="llb-responsive-tabs"
+                        tabs={[
+                            {
+                                name: 'desktop',
+                                title: __('Desktop', 'lazy-load-block'),
+                                icon: desktop,
+                            },
+                            {
+                                name: 'tablet',
+                                title: __('Tablet', 'lazy-load-block'),
+                                icon: tablet,
+                            },
+                            {
+                                name: 'mobile',
+                                title: __('Móvil', 'lazy-load-block'),
+                                icon: mobile,
+                            },
+                        ]}
+                    >
+                        {(tab) => {
+                            if (tab.name === 'desktop') {
+                                return (
+                                    <div style={{ paddingTop: '15px' }}>
+                                        <TextControl
+                                            label={__('Ancho', 'lazy-load-block')}
+                                            value={iframeWidth}
+                                            onChange={(value) => setAttributes({ iframeWidth: value })}
+                                            placeholder="100%"
+                                            help="100%, 800px, 50vw..."
+                                        />
+                                        {!aspectRatio && (
+                                            <TextControl
+                                                label={__('Alto', 'lazy-load-block')}
+                                                value={iframeHeight}
+                                                onChange={(value) => setAttributes({ iframeHeight: value })}
+                                                placeholder="400px"
+                                                help="400px, 50vh, auto..."
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            }
+                            if (tab.name === 'tablet') {
+                                return (
+                                    <div style={{ paddingTop: '15px' }}>
+                                        <Text style={{ marginBottom: '10px', display: 'block', color: '#757575' }}>
+                                            {__('Pantallas < 1024px. Deja vacío para usar valores de Desktop.', 'lazy-load-block')}
+                                        </Text>
+                                        <TextControl
+                                            label={__('Ancho', 'lazy-load-block')}
+                                            value={iframeWidthTablet}
+                                            onChange={(value) => setAttributes({ iframeWidthTablet: value })}
+                                            placeholder={iframeWidth || '100%'}
+                                        />
+                                        {!aspectRatio && (
+                                            <TextControl
+                                                label={__('Alto', 'lazy-load-block')}
+                                                value={iframeHeightTablet}
+                                                onChange={(value) => setAttributes({ iframeHeightTablet: value })}
+                                                placeholder={iframeHeight || '400px'}
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            }
+                            if (tab.name === 'mobile') {
+                                return (
+                                    <div style={{ paddingTop: '15px' }}>
+                                        <Text style={{ marginBottom: '10px', display: 'block', color: '#757575' }}>
+                                            {__('Pantallas < 768px. Deja vacío para heredar.', 'lazy-load-block')}
+                                        </Text>
+                                        <TextControl
+                                            label={__('Ancho', 'lazy-load-block')}
+                                            value={iframeWidthMobile}
+                                            onChange={(value) => setAttributes({ iframeWidthMobile: value })}
+                                            placeholder={iframeWidthTablet || iframeWidth || '100%'}
+                                        />
+                                        {!aspectRatio && (
+                                            <TextControl
+                                                label={__('Alto', 'lazy-load-block')}
+                                                value={iframeHeightMobile}
+                                                onChange={(value) => setAttributes({ iframeHeightMobile: value })}
+                                                placeholder={iframeHeightTablet || iframeHeight || '300px'}
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            }
+                            return null;
+                        }}
+                    </TabPanel>
+                </PanelBody>
+
                 {/* Tipo de trigger */}
                 <PanelBody title={__('Tipo de activador', 'lazy-load-block')} initialOpen={false}>
                     <SelectControl
@@ -187,16 +309,16 @@ export default function Edit({ attributes, setAttributes }) {
                     )}
                 </PanelBody>
 
-                {/* Dimensiones */}
-                <PanelBody title={__('Dimensiones', 'lazy-load-block')} initialOpen={false}>
+                {/* Dimensiones del contenedor */}
+                <PanelBody title={__('Contenedor', 'lazy-load-block')} initialOpen={false}>
                     <TextControl
-                        label={__('Ancho', 'lazy-load-block')}
+                        label={__('Ancho del contenedor', 'lazy-load-block')}
                         value={containerWidth}
                         onChange={(value) => setAttributes({ containerWidth: value })}
                         help="100%, 600px, 50vw..."
                     />
                     <TextControl
-                        label={__('Alto mínimo', 'lazy-load-block')}
+                        label={__('Alto mínimo del contenedor', 'lazy-load-block')}
                         value={containerHeight}
                         onChange={(value) => setAttributes({ containerHeight: value })}
                         help="auto, 400px, 50vh..."
