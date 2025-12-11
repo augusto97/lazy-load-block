@@ -35,6 +35,7 @@ export default function Edit({ attributes, setAttributes }) {
         autoLoadOnVisible,
         containerWidth,
         containerHeight,
+        allowScripts,
     } = attributes;
 
     const [showPreview, setShowPreview] = useState(false);
@@ -141,6 +142,17 @@ export default function Edit({ attributes, setAttributes }) {
                         onChange={(value) => setAttributes({ autoLoadOnVisible: value })}
                         help={__('Usa Intersection Observer para cargar cuando el bloque entre en el viewport. Útil para lazy loading real sin clic.', 'lazy-load-block')}
                     />
+                    <ToggleControl
+                        label={__('Permitir ejecución de scripts', 'lazy-load-block')}
+                        checked={allowScripts}
+                        onChange={(value) => setAttributes({ allowScripts: value })}
+                        help={__('ADVERTENCIA DE SEGURIDAD: Solo activa esto si confías en el código. Los scripts solo se ejecutarán si tienes permisos de administrador (unfiltered_html).', 'lazy-load-block')}
+                    />
+                    {allowScripts && (
+                        <Notice status="warning" isDismissible={false}>
+                            {__('Los scripts embebidos se ejecutarán cuando el contenido se cargue. Asegúrate de que el código sea de una fuente confiable.', 'lazy-load-block')}
+                        </Notice>
+                    )}
                 </PanelBody>
             </InspectorControls>
 
