@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('LAZY_LOAD_BLOCK_VERSION', '1.1.0');
+define('LAZY_LOAD_BLOCK_VERSION', '1.2.0');
 define('LAZY_LOAD_BLOCK_PATH', plugin_dir_path(__FILE__));
 define('LAZY_LOAD_BLOCK_URL', plugin_dir_url(__FILE__));
 
@@ -168,9 +168,10 @@ function lazy_load_block_render($attributes, $content) {
     $html_content = isset($attributes['htmlContent']) ? $attributes['htmlContent'] : '';
     $trigger_text = isset($attributes['triggerText']) ? $attributes['triggerText'] : __('Cargar contenido', 'lazy-load-block');
     $trigger_type = isset($attributes['triggerType']) ? $attributes['triggerType'] : 'button';
-    $placeholder_text = isset($attributes['placeholderText']) ? $attributes['placeholderText'] : __('Haz clic para cargar', 'lazy-load-block');
-    $show_placeholder = isset($attributes['showPlaceholder']) ? (bool) $attributes['showPlaceholder'] : true;
+    $placeholder_text = isset($attributes['placeholderText']) ? $attributes['placeholderText'] : '';
+    $show_placeholder = isset($attributes['showPlaceholder']) ? (bool) $attributes['showPlaceholder'] : false;
     $placeholder_image = isset($attributes['placeholderImage']) ? $attributes['placeholderImage'] : '';
+    $show_play_icon = isset($attributes['showPlayIcon']) ? (bool) $attributes['showPlayIcon'] : false;
     $auto_load_on_visible = isset($attributes['autoLoadOnVisible']) ? (bool) $attributes['autoLoadOnVisible'] : false;
     $container_width = isset($attributes['containerWidth']) ? $attributes['containerWidth'] : '100%';
     $container_height = isset($attributes['containerHeight']) ? $attributes['containerHeight'] : 'auto';
@@ -181,24 +182,17 @@ function lazy_load_block_render($attributes, $content) {
     }
 
     // SANITIZACIÓN DE SEGURIDAD
-    // 1. Sanitizar el contenido HTML
     $html_content = lazy_load_block_sanitize_content($html_content);
 
-    // 2. Validar tipo de trigger (whitelist)
-    $valid_trigger_types = array('button', 'link');
+    $valid_trigger_types = array('button', 'link', 'image');
     if (!in_array($trigger_type, $valid_trigger_types, true)) {
         $trigger_type = 'button';
     }
 
-    // 3. Sanitizar dimensiones CSS
     $container_width = lazy_load_block_sanitize_css_dimension($container_width, '100%');
     $container_height = lazy_load_block_sanitize_css_dimension($container_height, 'auto');
-
-    // 4. Sanitizar textos
     $trigger_text = sanitize_text_field($trigger_text);
     $placeholder_text = sanitize_text_field($placeholder_text);
-
-    // 5. Validar URL de imagen
     $placeholder_image = esc_url_raw($placeholder_image);
 
     // Codificar el contenido sanitizado en base64
@@ -207,59 +201,89 @@ function lazy_load_block_render($attributes, $content) {
     // Generar ID único para este bloque
     $block_id = 'llb-' . wp_unique_id();
 
+    // Determinar el modo: imagen (limpio) o botón (tradicional)
+    $is_image_mode = !empty($placeholder_image) && $trigger_type === 'image';
+
     // Construir clases del wrapper
     $wrapper_classes = array('wp-block-lazy-load-block');
+
+    if ($is_image_mode) {
+        $wrapper_classes[] = 'llb-mode-image';
+    } else {
+        $wrapper_classes[] = 'llb-mode-button';
+    }
+
     if ($auto_load_on_visible) {
         $wrapper_classes[] = 'llb-auto-load';
     }
 
-    // Indicar si se permiten scripts (solo si el usuario tiene permisos)
     $scripts_allowed = $allow_scripts && current_user_can('unfiltered_html');
     if ($scripts_allowed) {
         $wrapper_classes[] = 'llb-allow-scripts';
     }
 
+    // Estilos inline solo si son necesarios
+    $inline_style = '';
+    if ($container_width !== '100%' || $container_height !== 'auto') {
+        $inline_style = sprintf('style="width: %s; min-height: %s;"', esc_attr($container_width), esc_attr($container_height));
+    }
+
     $output = sprintf(
-        '<div id="%s" class="%s" data-content="%s" data-loaded="false" data-allow-scripts="%s" style="width: %s; min-height: %s;">',
+        '<div id="%s" class="%s" data-content="%s" data-loaded="false" data-allow-scripts="%s" %s>',
         esc_attr($block_id),
         esc_attr(implode(' ', $wrapper_classes)),
         esc_attr($encoded_content),
         esc_attr($scripts_allowed ? 'true' : 'false'),
-        esc_attr($container_width),
-        esc_attr($container_height)
+        $inline_style
     );
 
-    // Área del placeholder (se muestra antes de cargar)
+    // Área del placeholder - clickeable completo
     $output .= '<div class="llb-placeholder">';
 
-    // Imagen de placeholder si existe
-    if (!empty($placeholder_image)) {
+    if ($is_image_mode) {
+        // MODO IMAGEN: Solo la imagen, clickeable completa
         $output .= sprintf(
             '<img src="%s" alt="%s" class="llb-placeholder-image" loading="lazy" />',
             esc_url($placeholder_image),
             esc_attr($placeholder_text)
         );
-    }
 
-    // Texto del placeholder
-    if ($show_placeholder && !empty($placeholder_text)) {
-        $output .= sprintf(
-            '<p class="llb-placeholder-text">%s</p>',
-            esc_html($placeholder_text)
-        );
-    }
-
-    // Trigger (botón o enlace)
-    if ($trigger_type === 'button') {
-        $output .= sprintf(
-            '<button type="button" class="llb-trigger llb-trigger-button">%s</button>',
-            esc_html($trigger_text)
-        );
+        // Icono de play opcional
+        if ($show_play_icon) {
+            $output .= '<div class="llb-play-overlay">';
+            $output .= '<div class="llb-play-icon">';
+            $output .= '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>';
+            $output .= '</div>';
+            $output .= '</div>';
+        }
     } else {
-        $output .= sprintf(
-            '<a href="#" class="llb-trigger llb-trigger-link">%s</a>',
-            esc_html($trigger_text)
-        );
+        // MODO BOTÓN: Imagen opcional + texto + botón
+        if (!empty($placeholder_image)) {
+            $output .= sprintf(
+                '<img src="%s" alt="%s" class="llb-placeholder-image" loading="lazy" />',
+                esc_url($placeholder_image),
+                esc_attr($placeholder_text)
+            );
+        }
+
+        if ($show_placeholder && !empty($placeholder_text)) {
+            $output .= sprintf(
+                '<p class="llb-placeholder-text">%s</p>',
+                esc_html($placeholder_text)
+            );
+        }
+
+        if ($trigger_type === 'button') {
+            $output .= sprintf(
+                '<button type="button" class="llb-trigger llb-trigger-button">%s</button>',
+                esc_html($trigger_text)
+            );
+        } else {
+            $output .= sprintf(
+                '<a href="#" class="llb-trigger llb-trigger-link">%s</a>',
+                esc_html($trigger_text)
+            );
+        }
     }
 
     $output .= '</div>'; // .llb-placeholder
