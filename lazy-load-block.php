@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('LAZY_LOAD_BLOCK_VERSION', '1.2.0');
+define('LAZY_LOAD_BLOCK_VERSION', '1.3.0');
 define('LAZY_LOAD_BLOCK_PATH', plugin_dir_path(__FILE__));
 define('LAZY_LOAD_BLOCK_URL', plugin_dir_url(__FILE__));
 
@@ -160,6 +160,50 @@ function lazy_load_block_sanitize_css_dimension($value, $default = 'auto') {
 }
 
 /**
+ * Sanitizar valor de color CSS
+ * Permite hex, rgb, rgba, hsl, hsla y nombres de colores válidos
+ *
+ * @param string $color Color a validar
+ * @return string Color sanitizado o valor por defecto
+ */
+function lazy_load_block_sanitize_color($color) {
+    if (empty($color)) {
+        return 'rgba(0,0,0,0.7)';
+    }
+
+    $color = trim($color);
+
+    // Hex color (#fff, #ffffff, #ffffffff con alpha)
+    if (preg_match('/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/', $color)) {
+        return $color;
+    }
+
+    // RGB/RGBA
+    if (preg_match('/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0|1|0?\.\d+))?\s*\)$/', $color)) {
+        return $color;
+    }
+
+    // HSL/HSLA
+    if (preg_match('/^hsla?\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*(,\s*(0|1|0?\.\d+))?\s*\)$/', $color)) {
+        return $color;
+    }
+
+    // Nombres de colores CSS válidos (lista parcial de los más comunes)
+    $valid_colors = array(
+        'transparent', 'black', 'white', 'red', 'green', 'blue', 'yellow',
+        'orange', 'purple', 'pink', 'gray', 'grey', 'brown', 'cyan', 'magenta',
+        'navy', 'teal', 'maroon', 'olive', 'lime', 'aqua', 'fuchsia', 'silver'
+    );
+
+    if (in_array(strtolower($color), $valid_colors, true)) {
+        return strtolower($color);
+    }
+
+    // Valor por defecto si no es válido
+    return 'rgba(0,0,0,0.7)';
+}
+
+/**
  * Render del bloque en el frontend
  * El contenido NO se renderiza directamente - se guarda en data-content codificado
  */
@@ -172,6 +216,7 @@ function lazy_load_block_render($attributes, $content) {
     $show_placeholder = isset($attributes['showPlaceholder']) ? (bool) $attributes['showPlaceholder'] : false;
     $placeholder_image = isset($attributes['placeholderImage']) ? $attributes['placeholderImage'] : '';
     $show_play_icon = isset($attributes['showPlayIcon']) ? (bool) $attributes['showPlayIcon'] : false;
+    $play_icon_color = isset($attributes['playIconColor']) ? $attributes['playIconColor'] : '#000000';
     $auto_load_on_visible = isset($attributes['autoLoadOnVisible']) ? (bool) $attributes['autoLoadOnVisible'] : false;
     $container_width = isset($attributes['containerWidth']) ? $attributes['containerWidth'] : '100%';
     $container_height = isset($attributes['containerHeight']) ? $attributes['containerHeight'] : 'auto';
@@ -248,11 +293,17 @@ function lazy_load_block_render($attributes, $content) {
             esc_attr($placeholder_text)
         );
 
-        // Icono de play opcional
+        // Icono de play opcional con color personalizado
         if ($show_play_icon) {
+            // Sanitizar el color (hex, rgb, rgba, o nombre de color)
+            $sanitized_color = lazy_load_block_sanitize_color($play_icon_color);
+
             $output .= '<div class="llb-play-overlay">';
-            $output .= '<div class="llb-play-icon">';
-            $output .= '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>';
+            $output .= sprintf(
+                '<div class="llb-play-icon" style="background-color: %s;">',
+                esc_attr($sanitized_color)
+            );
+            $output .= '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z" fill="#fff"/></svg>';
             $output .= '</div>';
             $output .= '</div>';
         }

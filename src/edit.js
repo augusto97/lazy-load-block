@@ -1,12 +1,13 @@
 /**
  * Componente de edición del bloque Lazy Load
- * Versión minimalista
+ * Versión minimalista - Toggle en toolbar
  */
 
 import { __ } from '@wordpress/i18n';
 import {
     useBlockProps,
     InspectorControls,
+    BlockControls,
     MediaUpload,
     MediaUploadCheck,
 } from '@wordpress/block-editor';
@@ -19,9 +20,13 @@ import {
     Button,
     ButtonGroup,
     Notice,
+    ToolbarGroup,
+    ToolbarButton,
+    ColorPicker,
     __experimentalText as Text,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
+import { code, seen } from '@wordpress/icons';
 
 export default function Edit({ attributes, setAttributes }) {
     const {
@@ -30,6 +35,7 @@ export default function Edit({ attributes, setAttributes }) {
         triggerText,
         placeholderImage,
         showPlayIcon,
+        playIconColor,
         placeholderText,
         showPlaceholder,
         autoLoadOnVisible,
@@ -38,7 +44,7 @@ export default function Edit({ attributes, setAttributes }) {
         allowScripts,
     } = attributes;
 
-    const [viewMode, setViewMode] = useState('code'); // 'code' o 'preview'
+    const [viewMode, setViewMode] = useState('preview'); // 'code' o 'preview'
 
     const blockProps = useBlockProps({
         className: 'lazy-load-block-editor',
@@ -48,13 +54,35 @@ export default function Edit({ attributes, setAttributes }) {
 
     return (
         <>
+            {/* Barra de herramientas flotante */}
+            <BlockControls>
+                <ToolbarGroup>
+                    <ToolbarButton
+                        icon={code}
+                        label={__('Editar código', 'lazy-load-block')}
+                        isPressed={viewMode === 'code'}
+                        onClick={() => setViewMode('code')}
+                    />
+                    <ToolbarButton
+                        icon={seen}
+                        label={__('Vista previa', 'lazy-load-block')}
+                        isPressed={viewMode === 'preview'}
+                        onClick={() => setViewMode('preview')}
+                    />
+                </ToolbarGroup>
+            </BlockControls>
+
             {/* Panel lateral con todas las configuraciones */}
             <InspectorControls>
-                {/* Información del bloque */}
-                <PanelBody title={__('Cómo funciona', 'lazy-load-block')} initialOpen={false}>
-                    <Text>
-                        {__('El contenido HTML que coloques aquí NO se cargará hasta que el usuario haga clic. Esto mejora tu PageSpeed porque el navegador no hace peticiones HTTP al contenido oculto.', 'lazy-load-block')}
-                    </Text>
+                {/* Código HTML */}
+                <PanelBody title={__('Código HTML', 'lazy-load-block')} initialOpen={true}>
+                    <TextareaControl
+                        value={htmlContent}
+                        onChange={(value) => setAttributes({ htmlContent: value })}
+                        placeholder={__('Pega aquí el código HTML, iframe o embed...', 'lazy-load-block')}
+                        rows={6}
+                        help={__('Este contenido NO se cargará hasta que el usuario haga clic.', 'lazy-load-block')}
+                    />
                 </PanelBody>
 
                 {/* Imagen de placeholder */}
@@ -95,19 +123,33 @@ export default function Edit({ attributes, setAttributes }) {
                             )}
                         />
                     </MediaUploadCheck>
+                </PanelBody>
 
-                    {placeholderImage && (
+                {/* Icono de Play */}
+                {placeholderImage && triggerType === 'image' && (
+                    <PanelBody title={__('Icono de Play', 'lazy-load-block')} initialOpen={true}>
                         <ToggleControl
                             label={__('Mostrar icono de play', 'lazy-load-block')}
                             checked={showPlayIcon}
                             onChange={(value) => setAttributes({ showPlayIcon: value })}
-                            style={{ marginTop: '15px' }}
                         />
-                    )}
-                </PanelBody>
+                        {showPlayIcon && (
+                            <>
+                                <Text style={{ marginBottom: '8px', display: 'block' }}>
+                                    {__('Color del icono', 'lazy-load-block')}
+                                </Text>
+                                <ColorPicker
+                                    color={playIconColor}
+                                    onChange={(color) => setAttributes({ playIconColor: color })}
+                                    enableAlpha={true}
+                                />
+                            </>
+                        )}
+                    </PanelBody>
+                )}
 
                 {/* Tipo de trigger */}
-                <PanelBody title={__('Tipo de activador', 'lazy-load-block')} initialOpen={true}>
+                <PanelBody title={__('Tipo de activador', 'lazy-load-block')} initialOpen={false}>
                     <SelectControl
                         label={__('¿Cómo se activa la carga?', 'lazy-load-block')}
                         value={triggerType}
@@ -182,65 +224,45 @@ export default function Edit({ attributes, setAttributes }) {
                 </PanelBody>
             </InspectorControls>
 
-            {/* Bloque en el editor - minimalista */}
+            {/* Bloque en el editor */}
             <div {...blockProps}>
-                <div className="llb-editor-minimal">
-                    {/* Toggle código/preview */}
-                    <div className="llb-editor-toggle">
-                        <ButtonGroup>
-                            <Button
-                                variant={viewMode === 'code' ? 'primary' : 'secondary'}
-                                onClick={() => setViewMode('code')}
-                                size="small"
-                            >
-                                {__('Código', 'lazy-load-block')}
-                            </Button>
-                            <Button
-                                variant={viewMode === 'preview' ? 'primary' : 'secondary'}
-                                onClick={() => setViewMode('preview')}
-                                size="small"
-                                disabled={!htmlContent && !placeholderImage}
-                            >
-                                {__('Vista previa', 'lazy-load-block')}
-                            </Button>
-                        </ButtonGroup>
-                    </div>
-
-                    {/* Contenido según el modo */}
-                    {viewMode === 'code' ? (
-                        <TextareaControl
+                {viewMode === 'code' ? (
+                    <div className="llb-editor-code">
+                        <textarea
                             value={htmlContent}
-                            onChange={(value) => setAttributes({ htmlContent: value })}
+                            onChange={(e) => setAttributes({ htmlContent: e.target.value })}
                             placeholder={__('Pega aquí el código HTML, iframe o embed...', 'lazy-load-block')}
                             rows={6}
-                            className="llb-code-editor"
                         />
-                    ) : (
-                        <div className="llb-preview-area">
-                            {isImageMode && placeholderImage ? (
-                                <div className="llb-preview-image-mode">
-                                    <img src={placeholderImage} alt="" />
-                                    {showPlayIcon && (
-                                        <div className="llb-preview-play">
-                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : placeholderImage ? (
-                                <div className="llb-preview-button-mode">
-                                    <img src={placeholderImage} alt="" />
-                                    {showPlaceholder && placeholderText && <p>{placeholderText}</p>}
-                                    <button type="button">{triggerText}</button>
-                                </div>
-                            ) : (
-                                <div className="llb-preview-button-mode">
-                                    {showPlaceholder && placeholderText && <p>{placeholderText}</p>}
-                                    <button type="button">{triggerText}</button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+                    </div>
+                ) : (
+                    <div className="llb-editor-preview">
+                        {isImageMode && placeholderImage ? (
+                            <div className="llb-preview-image-mode">
+                                <img src={placeholderImage} alt="" />
+                                {showPlayIcon && (
+                                    <div
+                                        className="llb-preview-play"
+                                        style={{ backgroundColor: playIconColor || 'rgba(0,0,0,0.7)' }}
+                                    >
+                                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="#fff"/></svg>
+                                    </div>
+                                )}
+                            </div>
+                        ) : placeholderImage ? (
+                            <div className="llb-preview-button-mode">
+                                <img src={placeholderImage} alt="" />
+                                {showPlaceholder && placeholderText && <p>{placeholderText}</p>}
+                                <button type="button">{triggerText}</button>
+                            </div>
+                        ) : (
+                            <div className="llb-preview-button-mode">
+                                {showPlaceholder && placeholderText && <p>{placeholderText}</p>}
+                                <button type="button">{triggerText || __('Cargar contenido', 'lazy-load-block')}</button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </>
     );
