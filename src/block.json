@@ -2,7 +2,7 @@
     "$schema": "https://schemas.wp.org/trunk/block.json",
     "apiVersion": 3,
     "name": "lazy-load-block/lazy-load-block",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "title": "Lazy Load Block",
     "category": "lazy-load",
     "icon": "performance",
@@ -50,6 +50,10 @@
         "containerHeight": {
             "type": "string",
             "default": "400px"
+        },
+        "allowScripts": {
+            "type": "boolean",
+            "default": false
         }
     },
     "editorScript": "file:./index.js",
