@@ -1,130 +1,126 @@
 /**
- * Estilos del editor de Gutenberg para Lazy Load Block
+ * Estilos del editor - Versión minimalista
  */
 
 .lazy-load-block-editor {
-    .llb-editor-container {
-        border: 2px solid #007cba;
-        border-radius: 8px;
+    .llb-editor-minimal {
+        border: 1px solid #ddd;
+        border-radius: 4px;
         overflow: hidden;
         background: #fff;
     }
 
-    .llb-editor-header {
+    // Toggle código/preview
+    .llb-editor-toggle {
+        padding: 8px;
+        background: #f6f7f7;
+        border-bottom: 1px solid #ddd;
         display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 16px;
-        background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
-        color: #fff;
+        justify-content: flex-end;
 
-        .llb-editor-icon {
-            font-size: 20px;
-        }
-
-        .llb-editor-title {
-            font-weight: 600;
-            font-size: 14px;
-            flex-grow: 1;
-        }
-
-        .llb-editor-badge {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .components-button-group {
+            .components-button {
+                font-size: 12px;
+                padding: 4px 12px;
+                min-height: 28px;
+            }
         }
     }
 
-    .components-notice {
-        margin: 16px;
-        margin-bottom: 0;
-    }
+    // Editor de código
+    .llb-code-editor {
+        margin: 0;
 
-    .llb-html-textarea {
-        margin: 16px;
+        .components-base-control__field {
+            margin: 0;
+        }
 
         textarea {
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace !important;
             font-size: 13px !important;
             line-height: 1.5 !important;
-            background: #f6f7f7;
-            border-color: #ddd;
+            border: none !important;
+            border-radius: 0 !important;
+            resize: vertical;
+            min-height: 120px;
 
             &:focus {
-                background: #fff;
-                border-color: #007cba;
-                box-shadow: 0 0 0 1px #007cba;
+                box-shadow: none !important;
+                outline: none !important;
             }
         }
     }
 
-    .llb-preview-section {
-        padding: 0 16px 16px;
+    // Vista previa
+    .llb-preview-area {
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-        .components-button {
-            margin-bottom: 12px;
+    // Preview modo imagen
+    .llb-preview-image-mode {
+        position: relative;
+        width: 100%;
+        line-height: 0;
+
+        img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .llb-preview-play {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 68px;
+            height: 68px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            svg {
+                width: 30px;
+                height: 30px;
+                fill: #fff;
+                margin-left: 4px;
+            }
         }
     }
 
-    .llb-preview-container {
-        border: 1px dashed #ddd;
-        border-radius: 4px;
-        padding: 12px;
+    // Preview modo botón
+    .llb-preview-button-mode {
+        padding: 30px;
+        text-align: center;
+        width: 100%;
         background: #f9f9f9;
-    }
 
-    .llb-preview-notice {
-        font-size: 12px;
-        color: #666;
-        margin: 0 0 12px 0;
-        font-style: italic;
-    }
-
-    .llb-preview-content {
-        background: #fff;
-        padding: 12px;
-        border-radius: 4px;
-        border: 1px solid #eee;
-
-        iframe {
+        img {
             max-width: 100%;
+            height: auto;
+            margin-bottom: 15px;
+            border-radius: 4px;
         }
-    }
-
-    .components-placeholder {
-        margin: 16px;
-        background: #f0f6fc;
-        border-color: #007cba;
-    }
-
-    .llb-editor-footer {
-        padding: 12px 16px;
-        background: #f6f7f7;
-        border-top: 1px solid #eee;
 
         p {
-            margin: 0;
-            font-size: 12px;
+            margin: 0 0 15px 0;
             color: #666;
-
-            strong {
-                color: #333;
-            }
+            font-size: 14px;
         }
-    }
-}
 
-// Estilos para el panel de configuración
-.llb-media-upload {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    img {
-        border-radius: 4px;
-        border: 1px solid #ddd;
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            background: #007cba;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: default;
+        }
     }
 }

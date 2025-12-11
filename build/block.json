@@ -2,7 +2,7 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "lazy-load-block/lazy-load-block",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "title": "Lazy Load Block",
   "category": "lazy-load",
   "icon": "performance",
@@ -29,29 +29,34 @@
       "type": "string",
       "default": ""
     },
+    "triggerType": {
+      "type": "string",
+      "default": "image",
+      "enum": [
+        "button",
+        "link",
+        "image"
+      ]
+    },
     "triggerText": {
       "type": "string",
       "default": "Cargar contenido"
     },
-    "triggerType": {
-      "type": "string",
-      "default": "button",
-      "enum": [
-        "button",
-        "link"
-      ]
-    },
-    "placeholderText": {
-      "type": "string",
-      "default": "Haz clic para cargar el contenido"
-    },
-    "showPlaceholder": {
-      "type": "boolean",
-      "default": true
-    },
     "placeholderImage": {
       "type": "string",
       "default": ""
+    },
+    "showPlayIcon": {
+      "type": "boolean",
+      "default": true
+    },
+    "placeholderText": {
+      "type": "string",
+      "default": ""
+    },
+    "showPlaceholder": {
+      "type": "boolean",
+      "default": false
     },
     "autoLoadOnVisible": {
       "type": "boolean",
@@ -63,7 +68,7 @@
     },
     "containerHeight": {
       "type": "string",
-      "default": "400px"
+      "default": "auto"
     },
     "allowScripts": {
       "type": "boolean",

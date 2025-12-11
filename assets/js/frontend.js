@@ -30,12 +30,17 @@
      */
     function initBlock(block) {
         const trigger = block.querySelector('.llb-trigger');
+        const placeholder = block.querySelector('.llb-placeholder');
         const isAutoLoad = block.classList.contains('llb-auto-load');
+        const isImageMode = block.classList.contains('llb-mode-image');
 
-        if (!trigger) return;
+        // En modo imagen, el placeholder completo es clickeable
+        const clickTarget = isImageMode ? placeholder : trigger;
+
+        if (!clickTarget) return;
 
         // Event listener para el trigger (clic)
-        trigger.addEventListener('click', function(e) {
+        clickTarget.addEventListener('click', function(e) {
             e.preventDefault();
             loadContent(block);
         });
@@ -50,7 +55,7 @@
                     }
                 });
             }, {
-                rootMargin: '100px', // Cargar 100px antes de que sea visible
+                rootMargin: '100px',
                 threshold: 0.1
             });
 
@@ -58,12 +63,18 @@
         }
 
         // Soporte para teclado (accesibilidad)
-        trigger.addEventListener('keydown', function(e) {
+        clickTarget.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 loadContent(block);
             }
         });
+
+        // Añadir atributos de accesibilidad en modo imagen
+        if (isImageMode && placeholder) {
+            placeholder.setAttribute('role', 'button');
+            placeholder.setAttribute('tabindex', '0');
+        }
     }
 
     /**
@@ -285,7 +296,7 @@
         /**
          * Obtener versión del script
          */
-        version: '1.1.0'
+        version: '1.2.0'
     };
 
     // Inicializar cuando el DOM esté listo
