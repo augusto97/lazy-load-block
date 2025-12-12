@@ -337,70 +337,42 @@ function lazy_load_block_sanitize_url($url, $require_https = false) {
 }
 
 /**
- * Agregar atributo sandbox a iframes para seguridad
+ * Agregar atributos de seguridad a iframes
+ *
+ * NOTA: No agregamos sandbox automáticamente porque rompe la mayoría de embeds
+ * (YouTube, Vimeo, etc. necesitan ejecutar scripts para funcionar).
+ * En su lugar, agregamos atributos de seguridad que no rompen la funcionalidad.
  *
  * @param string $content Contenido HTML
- * @param bool $allow_scripts Si se permiten scripts
- * @return string Contenido con sandbox aplicado a iframes
+ * @param bool $allow_scripts Si se permiten scripts (no usado actualmente)
+ * @return string Contenido con atributos de seguridad aplicados a iframes
  */
 function lazy_load_block_add_iframe_sandbox($content, $allow_scripts = false) {
     if (empty($content) || strpos($content, '<iframe') === false) {
         return $content;
     }
 
-    // Permisos base del sandbox (restrictivos)
-    $sandbox_permissions = array(
-        'allow-same-origin',
-        'allow-forms',
-        'allow-popups',
-        'allow-popups-to-escape-sandbox',
-    );
-
-    // Si se permiten scripts, agregar permiso
-    if ($allow_scripts) {
-        $sandbox_permissions[] = 'allow-scripts';
-        $sandbox_permissions[] = 'allow-presentation';
-    }
-
-    $sandbox_value = implode(' ', $sandbox_permissions);
-
-    // Usar DOMDocument para manipular HTML de forma segura
-    if (class_exists('DOMDocument')) {
-        $dom = new DOMDocument();
-
-        // Suprimir errores de HTML mal formado
-        libxml_use_internal_errors(true);
-
-        // Cargar HTML con encoding UTF-8
-        $dom->loadHTML('<?xml encoding="UTF-8">' . $content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-
-        libxml_clear_errors();
-
-        $iframes = $dom->getElementsByTagName('iframe');
-
-        foreach ($iframes as $iframe) {
-            // Solo agregar sandbox si no existe ya
-            if (!$iframe->hasAttribute('sandbox')) {
-                $iframe->setAttribute('sandbox', $sandbox_value);
-            }
+    // Usar regex simple en lugar de DOMDocument para evitar corrupción de HTML
+    // Agregar loading="lazy" si no existe
+    $content = preg_replace_callback(
+        '/<iframe([^>]*)>/i',
+        function($matches) {
+            $attrs = $matches[1];
 
             // Agregar loading="lazy" si no existe
-            if (!$iframe->hasAttribute('loading')) {
-                $iframe->setAttribute('loading', 'lazy');
+            if (stripos($attrs, 'loading=') === false) {
+                $attrs .= ' loading="lazy"';
             }
 
-            // Agregar referrerpolicy para privacidad
-            if (!$iframe->hasAttribute('referrerpolicy')) {
-                $iframe->setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+            // Agregar referrerpolicy si no existe
+            if (stripos($attrs, 'referrerpolicy=') === false) {
+                $attrs .= ' referrerpolicy="strict-origin-when-cross-origin"';
             }
-        }
 
-        // Obtener HTML resultante
-        $content = $dom->saveHTML();
-
-        // Limpiar el encoding declaration agregado
-        $content = preg_replace('/^<\?xml[^>]*\?>/', '', $content);
-    }
+            return '<iframe' . $attrs . '>';
+        },
+        $content
+    );
 
     return $content;
 }
