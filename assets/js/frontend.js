@@ -23,18 +23,18 @@
 
     /**
      * Configuración de seguridad
+     * NOTA: No usar flag 'g' en regex que se usan con .test() para evitar bugs
      */
     var SECURITY_CONFIG = {
         maxContentLength: 1048576, // 1MB máximo
         maxScriptLength: 102400,   // 100KB máximo por script
+        // Patrones peligrosos solo para contenido que NO es iframe/embed
+        // Los iframes de YouTube, Vimeo, etc. son seguros por naturaleza
         dangerousPatterns: [
-            /javascript\s*:/gi,
-            /vbscript\s*:/gi,
-            /data\s*:\s*text\/html/gi,
-            /expression\s*\(/gi,
-            /<script[^>]*>[\s\S]*?document\.cookie/gi,
-            /<script[^>]*>[\s\S]*?localStorage/gi,
-            /<script[^>]*>[\s\S]*?sessionStorage/gi,
+            /javascript\s*:/i,
+            /vbscript\s*:/i,
+            /data\s*:\s*text\/html/i,
+            /expression\s*\(/i,
         ],
         // URLs de confianza para iframes (opcional, puede ser extendido)
         trustedDomains: [
